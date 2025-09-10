@@ -1,22 +1,32 @@
 [
   {
     "description": "Fixing esomero android app",
-    "done": false
+    "done": false,
+    "due_date": null
   },
   {
     "description": "Learn Rust",
-    "done": false
+    "done": false,
+    "due_date": null
   },
   {
     "description": "Write Rust pro code",
-    "done": false
+    "done": false,
+    "due_date": null
   },
   {
     "description": "Buy groceries",
-    "done": false
+    "done": false,
+    "due_date": null
   },
   {
     "description": "Write blog post",
-    "done": false
+    "done": false,
+    "due_date": null
+  },
+  {
+    "description": "Finish Rust module refactor",
+    "done": false,
+    "due_date": "2025-09-05"
   }
 ]

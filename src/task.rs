@@ -1,15 +1,23 @@
+use chrono::{NaiveDate, ParseError}; // for adding due dates
 use serde::{Deserialize, Serialize};  // for writing tasks to json file
 use colored::*; // for colorizing tasks
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
     pub description: String,
     pub done: bool,
+    pub due_date: Option<NaiveDate>, // Optional due date
 }
 
 impl Task {
-    pub fn new(description: String) -> Self {
-        Task { description, done: false }
+    pub fn new(description: String, due_date: Option<NaiveDate>) -> Self {
+        Task { description, done: false, due_date }
+    }
+}
+
+impl Task {
+    pub fn parse_date(input: &str) -> Result<NaiveDate, ParseError> {
+        NaiveDate::parse_from_str(input, "%Y-%m-%d")
     }
 }
 
@@ -20,6 +28,18 @@ pub fn list_tasks(tasks: &Vec<Task>) {
     }
 
     println!("{}", "=== TASKS ===".cyan().bold());
+
+    // Sort by due date first, then done status
+    let mut sorted = tasks.clone();
+    sorted.sort_by(|a, b| {
+        match (&a.due_date, &b.due_date) {
+            (Some(d1), Some(d2)) => d1.cmp(d2),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => std::cmp::Ordering::Equal,
+        }
+    });
+
     for (i, task) in tasks.iter().enumerate() {
         let index = format!("{}. ", i + 1).blue();
         let desc = if task.done {
@@ -27,7 +47,14 @@ pub fn list_tasks(tasks: &Vec<Task>) {
         } else {
             task.description.yellow()
         };
-        println!("{}{}", index, desc);
+
+        let due = if let Some(date) = task.due_date {
+            format!(" (due {})", date).magenta().to_string()
+        } else {
+            "".to_string()
+        };
+
+        println!("{}{}{}", index, desc, due);
     }
 }
 

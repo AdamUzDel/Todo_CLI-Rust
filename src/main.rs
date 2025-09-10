@@ -5,6 +5,7 @@ mod menu;
 use clap::{Parser, Subcommand};
 use storage::{load_tasks, save_tasks};
 use task::{list_tasks, search_tasks, Task};
+use colored::*;
 
 #[derive(Parser)]
 #[command(name = "Todo CLI")]
@@ -16,7 +17,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    Add { description: String },
+    Add { description: String, #[arg(short, long)] due: Option<String> },
     List,
     Done { index: usize },
     Delete { index: usize },
@@ -28,8 +29,19 @@ fn main() {
     let mut tasks = load_tasks();
 
     match cli.command {
-        Some(Commands::Add { description }) => {
-            tasks.push(Task::new(description));
+        Some(Commands::Add { description, due }) => {
+            let due_date = match due {
+                Some(d) => match Task::parse_date(&d) {
+                    Ok(date) => Some(date),
+                    Err(_) => {
+                        println!("{}", "Invalid date format, ignoring due date.".red());
+                        None
+                    }
+                },
+                None => None,
+            };
+
+            tasks.push(Task::new(description, due_date));
             save_tasks(&tasks);
             println!("Task added!");
         }

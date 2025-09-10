@@ -1,6 +1,7 @@
 use crate::storage::save_tasks;
 use crate::task::{list_tasks, search_tasks, Task};
 use std::io::{self, Write};
+use colored::*; // for colorizing tasks
 
 pub fn run_menu(tasks: &mut Vec<Task>) {
     loop {
@@ -42,7 +43,21 @@ fn read_input(prompt: &str) -> String {
 
 fn add_task(tasks: &mut Vec<Task>) {
     let desc = read_input("Enter task description: ");
-    tasks.push(Task::new(desc));
+    let due_input = read_input("Enter due date (YYYY-MM-DD) or leave blank: ");
+
+    let due_date = if due_input.trim().is_empty() {
+        None
+    } else {
+        match Task::parse_date(&due_input) {
+            Ok(date) => Some(date),
+            Err(_) => {
+                println!("{}", "Invalid date format, ignoring due date.".red());
+                None
+            }
+        }
+    };
+
+    tasks.push(Task::new(desc, due_date));
     save_tasks(tasks);
     println!("Task added!");
 }
