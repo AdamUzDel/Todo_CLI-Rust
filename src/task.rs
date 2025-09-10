@@ -81,3 +81,48 @@ pub fn search_tasks(tasks: &Vec<Task>, keyword: &str) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::NaiveDate;
+
+    #[test]
+    fn test_parse_valid_date() {
+        let date_str = "2025-09-01";
+        let parsed = Task::parse_date(date_str);
+        assert!(parsed.is_ok());
+        assert_eq!(parsed.unwrap(), NaiveDate::from_ymd_opt(2025, 9, 1).unwrap());
+    }
+
+    #[test]
+    fn test_parse_invalid_date() {
+        let date_str = "2025-99-99";
+        let parsed = Task::parse_date(date_str);
+        assert!(parsed.is_err());
+    }
+
+    #[test]
+    fn test_sorting_by_due_date() {
+        let mut tasks = vec![
+            Task { description: "Task 1".to_string(), done: false, due_date: Some(NaiveDate::from_ymd_opt(2025, 9, 10).unwrap()) },
+            Task { description: "Task 2".to_string(), done: false, due_date: None },
+            Task { description: "Task 3".to_string(), done: false, due_date: Some(NaiveDate::from_ymd_opt(2025, 9, 5).unwrap()) },
+        ];
+
+        // Sort manually like list_tasks
+        tasks.sort_by(|a, b| {
+            match (&a.due_date, &b.due_date) {
+                (Some(d1), Some(d2)) => d1.cmp(d2),
+                (Some(_), None) => std::cmp::Ordering::Less,
+                (None, Some(_)) => std::cmp::Ordering::Greater,
+                (None, None) => std::cmp::Ordering::Equal,
+            }
+        });
+
+        assert_eq!(tasks[0].description, "Task 3");
+        assert_eq!(tasks[1].description, "Task 1");
+        assert_eq!(tasks[2].description, "Task 2");
+    }
+}
+
