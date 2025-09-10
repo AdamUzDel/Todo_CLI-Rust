@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};  // for writing tasks to json file
 use std::fs::{self, File};
 use std::io::Write;
 use clap::{Parser, Subcommand};  // for commandline parsing
+use colored::*; // for colorizing tasks
 
 #[derive(Parser)]
 #[command(name = "todo_cli", version = "1.0", about = "A simple todo CLI in Rust")]
@@ -28,6 +29,8 @@ enum Commands {
     Delete {
         index: usize,
     },
+    /// Search tasks by keyword
+    Search { keyword: String },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -75,6 +78,9 @@ fn main() {
                 println!("Invalid task number!");
             }
         }
+        Some(Commands::Search { keyword }) => {
+            search_tasks(&tasks, &keyword);
+        }
         None => {
             // If no args given, show interactive menu
             run_menu(&mut tasks);
@@ -118,7 +124,8 @@ fn run_menu(tasks: &mut Vec<Task>) {
         println!("2. List Tasks");
         println!("3. Mark Task as Done");
         println!("4. Delete Task");
-        println!("5. Quit");
+        println!("5. Search Tasks");
+        println!("6. Quit");
 
         let choice = read_input("Enter choice: ");
 
@@ -139,6 +146,10 @@ fn run_menu(tasks: &mut Vec<Task>) {
                 save_tasks(&tasks);
             }
             "5" => {
+                let query = read_input("Enter keyword to search: ");
+                search_tasks(tasks, &query);
+            }
+            "6" => {
                 println!("Goodbye!");
                 break;
             }
@@ -160,13 +171,19 @@ fn read_input(prompt: &str) -> String {
 
 fn list_tasks(tasks: &Vec<Task>) {
     if tasks.is_empty() {
-        println!("No tasks yet!");
+        println!("{}", "No tasks found!".red());
         return;
     }
 
+    println!("{}", "=== TASKS ===".cyan().bold());
     for (i, task) in tasks.iter().enumerate() {
-        let status = if task.done { "✔" } else { " " };
-        println!("{}. [{}] {}", i + 1, status, task.description);
+        let index = format!("{}. ", i + 1).blue();
+        let desc = if task.done {
+            task.description.green().strikethrough()
+        } else {
+            task.description.yellow()
+        };
+        println!("{}{}", index, desc);
     }
 }
 
@@ -222,5 +239,29 @@ fn delete_task(tasks: &mut Vec<Task>) {
         }
     } else {
         println!("Please enter a valid number!");
+    }
+}
+
+fn search_tasks(tasks: &Vec<Task>, keyword: &str) {
+    let keyword_lower = keyword.to_lowercase();
+    let filtered: Vec<(usize, &Task)> = tasks
+        .iter()
+        .enumerate()
+        .filter(|(_, t)| t.description.to_lowercase().contains(&keyword_lower))
+        .collect();
+
+    if filtered.is_empty() {
+        println!("{}", "No matching tasks found.".red());
+    } else {
+        println!("{}", "=== SEARCH RESULTS ===".cyan().bold());
+        for (i, task) in filtered {
+            let index = format!("{}. ", i + 1).blue();
+            let desc = if task.done {
+                task.description.green().strikethrough()
+            } else {
+                task.description.yellow()
+            };
+            println!("{}{}", index, desc);
+        }
     }
 }
