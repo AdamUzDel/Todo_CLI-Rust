@@ -2,5 +2,9 @@
   {
     "description": "Fixing esomero android app",
     "done": false
+  },
+  {
+    "description": "Learn Rust",
+    "done": false
   }
 ]
