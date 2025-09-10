@@ -1,7 +1,10 @@
 // src/main.rs
 use std::io; // for user input
+use serde::{Deserialize, Serialize};
+use std::fs::{self, File};
+use std::io::Write;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Task {
     description: String,
     done: bool,
@@ -13,8 +16,10 @@ impl Task {
     }
 }
 
+const FILE_PATH: &str = "tasks.json";
+
 fn main() {
-    let mut tasks: Vec<Task> = Vec::new();
+    let mut tasks = load_tasks(); // load existing tasks
 
     loop {
         println!("\n=== TODO MENU ===");
@@ -29,10 +34,14 @@ fn main() {
             "1" => {
                 let desc = read_input("Enter task description: ");
                 tasks.push(Task::new(desc));
+                save_tasks(&tasks);
                 println!("Task added!");
             }
             "2" => list_tasks(&tasks),
-            "3" => mark_task_done(&mut tasks),
+            "3" => {
+                mark_task_done(&mut tasks);
+                save_tasks(&tasks);
+            }
             "4" => {
                 println!("Goodbye!");
                 break;
@@ -41,6 +50,7 @@ fn main() {
         }
     }
 }
+
 
 fn read_input(prompt: &str) -> String {
     use std::io::Write;
@@ -81,5 +91,20 @@ fn mark_task_done(tasks: &mut Vec<Task>) {
         }
     } else {
         println!("Please enter a valid number!");
+    }
+}
+
+fn load_tasks() -> Vec<Task> {
+    if let Ok(data) = fs::read_to_string(FILE_PATH) {
+        serde_json::from_str(&data).unwrap_or_else(|_| Vec::new())
+    } else {
+        Vec::new()
+    }
+}
+
+fn save_tasks(tasks: &Vec<Task>) {
+    if let Ok(json) = serde_json::to_string_pretty(tasks) {
+        let mut file = File::create(FILE_PATH).expect("Could not create file");
+        file.write_all(json.as_bytes()).expect("Could not write file");
     }
 }
